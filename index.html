@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NK Landscape Explorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2335;
+    --border: #2a3050;
+    --accent: #4fc3f7;
+    --accent2: #f06292;
+    --accent3: #a5d6a7;
+    --gold: #ffd54f;
+    --text: #e8ecf4;
+    --text-dim: #7986a8;
+    --text-muted: #4a5578;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --local-opt: #ff7043;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .header-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ctrl-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .ctrl-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    width: 56px;
+    text-align: center;
+  }
+
+  .ctrl-input:focus { outline: none; border-color: var(--accent); }
+
+  .ctrl-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .ctrl-select:focus { outline: none; border-color: var(--accent); }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-regen {
+    background: transparent;
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  .btn-regen:hover { background: var(--accent2); color: #fff; }
+
+  .btn-reset {
+    background: transparent;
+    border-color: var(--text-muted);
+    color: var(--text-dim);
+  }
+  .btn-reset:hover { border-color: var(--text-dim); color: var(--text); }
+
+  /* Main layout */
+  .main {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* Panel style */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* Current config panel */
+  .config-body {
+    padding: 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .bits-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
+  .bit-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .bit-index {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .bit-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    border: 2px solid;
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bit-btn.off {
+    background: var(--bg);
+    border-color: var(--border);
+    color: var(--text-muted);
+  }
+  .bit-btn.on {
+    background: rgba(79,195,247,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .bit-btn:hover { transform: scale(1.08); }
+
+  .fitness-display {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    min-width: 140px;
+  }
+
+  .fitness-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .fitness-value {
+    font-family: var(--mono);
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+
+  .fitness-value.up { color: var(--accent3); }
+  .fitness-value.down { color: var(--accent2); }
+  .fitness-value.same { color: var(--text); }
+
+  .fitness-delta {
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 18px;
+    transition: color 0.2s;
+  }
+
+  .local-opt-badge {
+    display: none;
+    background: rgba(255,112,67,0.15);
+    border: 1px solid var(--local-opt);
+    color: var(--local-opt);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .local-opt-badge.visible { display: block; }
+
+  /* Two-column layout for best and history */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* Best peak panel */
+  .best-body {
+    padding: 16px;
+  }
+
+  .best-config {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .best-bit {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: 1.5px solid;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .best-bit.on { border-color: var(--gold); color: var(--gold); background: rgba(255,213,79,0.1); }
+  .best-bit.off { border-color: var(--border); color: var(--text-muted); background: var(--bg); }
+
+  .best-fitness {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  .best-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* History table */
+  .history-body {
+    padding: 0;
+  }
+
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .history-table th {
+    padding: 8px 12px;
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .history-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid rgba(42,48,80,0.5);
+    color: var(--text-dim);
+    vertical-align: middle;
+  }
+
+  .history-table tr:last-child td { border-bottom: none; }
+
+  .history-table tr.best-row td { color: var(--gold); background: rgba(255,213,79,0.04); }
+  .history-table tr.improve-row td { color: var(--accent3); }
+
+  .history-bits {
+    display: flex;
+    gap: 3px;
+  }
+
+  .h-bit {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+    font-size: 9px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid;
+  }
+  .h-bit.on { border-color: var(--accent); color: var(--accent); background: rgba(79,195,247,0.1); }
+  .h-bit.off { border-color: var(--text-muted); color: var(--text-muted); }
+
+  .delta-cell { font-size: 11px; }
+  .delta-up { color: var(--accent3); }
+  .delta-down { color: var(--accent2); }
+  .delta-same { color: var(--text-muted); }
+
+  /* Interaction matrix toggle */
+  .matrix-toggle {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .matrix-toggle:hover { color: var(--accent); }
+
+  .matrix-body {
+    padding: 16px;
+    display: none;
+  }
+  .matrix-body.open { display: block; }
+
+  .matrix-grid {
+    display: inline-grid;
+    gap: 2px;
+  }
+
+  .matrix-cell {
+    width: 26px;
+    height: 26px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .matrix-cell.diag { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  .matrix-cell.active { background: rgba(79,195,247,0.2); color: var(--accent); border: 1px solid rgba(79,195,247,0.4); }
+  .matrix-cell.inactive { background: var(--bg); color: var(--text-muted); border: 1px solid rgba(42,48,80,0.3); }
+
+  .matrix-legend {
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* Neighbor indicators on bits */
+  .bit-neighbors {
+    font-size: 9px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    text-align: center;
+    max-width: 44px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Step counter */
+  .step-counter {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .sep {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+  }
+
+  /* Seed input wider */
+  .seed-input { width: 80px !important; }
+
+  /* Animations */
+  @keyframes flash {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+  .flash { animation: flash 0.3s ease; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .slide-in { animation: slideIn 0.2s ease; }
+
+  /* Empty state */
+  .empty-state {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  @media (max-width: 700px) {
+    .two-col { grid-template-columns: 1fr; }
+    .header { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* ── Instructor mode ── */
+  .btn-instructor {
+    background: transparent;
+    border-color: var(--text-muted);
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+  .btn-instructor:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-instructor.active { border-color: var(--gold); color: var(--gold); background: rgba(255,213,79,0.08); }
+
+  /* Password modal */
+  .modal-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px 32px;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .modal-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .modal-desc {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .modal-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    width: 100%;
+  }
+  .modal-input:focus { outline: none; border-color: var(--gold); }
+
+  .modal-error {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    min-height: 16px;
+  }
+
+  .modal-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* Instructor panel */
+  .instructor-panel {
+    display: none;
+    border: 1px solid rgba(255,213,79,0.3);
+    border-radius: 6px;
+    background: rgba(255,213,79,0.03);
+    overflow: hidden;
+  }
+  .instructor-panel.open { display: block; }
+
+  .instructor-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,213,79,0.2);
+    background: rgba(255,213,79,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .instructor-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .instructor-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .instructor-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  .stat-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  /* Global peak reveal */
+  .global-peak-section { display: flex; flex-direction: column; gap: 8px; }
+
+  .reveal-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-reveal {
+    background: transparent;
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .btn-reveal:hover { background: rgba(255,213,79,0.15); }
+
+  .global-bits {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .global-bit {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    border: 1.5px solid;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .global-bit.on { border-color: var(--gold); color: var(--gold); background: rgba(255,213,79,0.12); }
+  .global-bit.off { border-color: var(--border); color: var(--text-muted); background: var(--bg); }
+
+  /* Local optima list */
+  .local-optima-section { display: flex; flex-direction: column; gap: 8px; }
+
+  .local-opt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .local-opt-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .local-opt-rank {
+    color: var(--text-muted);
+    min-width: 24px;
+  }
+
+  .local-opt-fitness {
+    color: var(--text);
+    min-width: 56px;
+  }
+
+  .local-opt-bits { display: flex; gap: 3px; }
+
+  .lo-bit {
+    width: 14px; height: 14px;
+    border-radius: 2px; border: 1px solid;
+    font-size: 8px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lo-bit.on { border-color: var(--accent3); color: var(--accent3); background: rgba(165,214,167,0.1); }
+  .lo-bit.off { border-color: var(--text-muted); color: var(--text-muted); }
+
+  .lo-global { border-color: var(--gold) !important; color: var(--gold) !important; background: rgba(255,213,79,0.08) !important; }
+
+  /* Bar chart */
+  .bar-chart-section { display: flex; flex-direction: column; gap: 8px; }
+  .bar-chart-wrap { position: relative; height: 160px; }
+  canvas#landscape-chart { width: 100% !important; height: 160px !important; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+
+  .computing-msg {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 16px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header / Controls -->
+<div class="header">
+  <div class="header-title">NK Landscape Explorer</div>
+  <div class="header-controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">N</span>
+      <input class="ctrl-input" id="inp-n" type="number" min="2" max="16" value="8">
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">K</span>
+      <input class="ctrl-input" id="inp-k" type="number" min="0" max="15" value="2">
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Structure</span>
+      <select class="ctrl-select" id="inp-structure">
+        <option value="random">Random</option>
+        <option value="modular">Modular</option>
+        <option value="nd">Nearly Decomposable</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Seed</span>
+      <input class="ctrl-input seed-input" id="inp-seed" type="number" value="42">
+    </div>
+    <div class="sep"></div>
+    <button class="btn btn-regen" id="btn-regen">↺ Regenerate Value Map</button>
+    <button class="btn btn-reset" id="btn-reset">Reset Search</button>
+    <div class="sep"></div>
+    <button class="btn btn-instructor" id="btn-instructor">⚷ Instructor</button>
+  </div>
+</div>
+
+<!-- Password modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-title">Instructor Mode</div>
+    <div class="modal-desc">Enter the instructor password to access the full landscape analysis.</div>
+    <input class="modal-input" id="modal-pw" type="password" placeholder="Password" autocomplete="off">
+    <div class="modal-error" id="modal-error"></div>
+    <div class="modal-btns">
+      <button class="btn btn-reset" id="modal-cancel">Cancel</button>
+      <button class="btn btn-reveal" id="modal-submit">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+
+  <!-- Current configuration panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Current Configuration</span>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="local-opt-badge" id="local-opt-badge">⚠ Local Optimum</span>
+        <span class="step-counter" id="step-counter">Step 0</span>
+      </div>
+    </div>
+    <div class="config-body">
+      <div class="bits-row" id="bits-row"></div>
+      <div class="fitness-display">
+        <span class="fitness-label">Fitness</span>
+        <span class="fitness-value" id="fitness-value">—</span>
+        <span class="fitness-delta" id="fitness-delta"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Best peak + history -->
+  <div class="two-col">
+
+    <!-- Best peak -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">★ Highest Peak Found</span>
+      </div>
+      <div class="best-body" id="best-body">
+        <div class="empty-state">No configurations explored yet.</div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Recent Configurations</span>
+        <span class="step-counter" id="history-count">0 explored</span>
+      </div>
+      <div class="history-body">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Bits</th>
+              <th>Fitness</th>
+              <th>Δ</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="4" class="empty-state">Flip a bit to begin.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Interaction matrix -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Interaction Structure</span>
+      <button class="matrix-toggle" id="matrix-toggle">▶ Show Matrix</button>
+    </div>
+    <div class="matrix-body" id="matrix-body"></div>
+  </div>
+
+  <!-- Instructor panel -->
+  <div class="instructor-panel" id="instructor-panel">
+    <div class="instructor-header">
+      <span class="instructor-title">⚷ Instructor Mode</span>
+      <button class="btn btn-reset" id="btn-exit-instructor" style="font-size:10px;padding:3px 8px;">Exit</button>
+    </div>
+    <div class="instructor-body">
+
+      <!-- Stats row -->
+      <div>
+        <div class="section-label" style="margin-bottom:10px;">Landscape Summary</div>
+        <div class="instructor-stats" id="instructor-stats">
+          <div class="stat-card"><div class="stat-label">Total Configs</div><div class="stat-value" id="stat-total">—</div></div>
+          <div class="stat-card"><div class="stat-label">Local Optima</div><div class="stat-value" id="stat-local">—</div><div class="stat-sub" id="stat-local-pct"></div></div>
+          <div class="stat-card"><div class="stat-label">Global Peak</div><div class="stat-value" id="stat-global">—</div></div>
+        </div>
+      </div>
+
+      <!-- Global peak reveal -->
+      <div class="global-peak-section">
+        <div class="section-label">Global Optimum</div>
+        <div class="reveal-row">
+          <button class="btn btn-reveal" id="btn-reveal-global">Reveal Configuration</button>
+          <div class="global-bits" id="global-bits"></div>
+          <span id="global-fitness-label" style="font-family:var(--mono);font-size:13px;color:var(--gold);"></span>
+        </div>
+      </div>
+
+      <!-- Landscape bar chart -->
+      <div class="bar-chart-section">
+        <div class="section-label">All Fitness Values — sorted (local optima highlighted)</div>
+        <div class="bar-chart-wrap">
+          <canvas id="landscape-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Local optima list -->
+      <div class="local-optima-section">
+        <div class="section-label">All Local Optima</div>
+        <div class="local-opt-list" id="local-opt-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── PRNG (seeded) ───────────────────────────────────────────────
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+// ─── STATE ───────────────────────────────────────────────────────
+let N, K, structure, seed;
+let rng;
+let interactionMatrix = []; // interactionMatrix[i] = array of indices that affect i
+let valueTables = [];       // valueTables[i][key] = fitness contribution of element i
+let currentBits = [];
+let currentFitness = null;
+let bestFitness = -Infinity;
+let bestBits = [];
+let history = [];
+let stepCount = 0;
+let matrixOpen = false;
+let totalExplored = 0;
+// instructor state (hoisted so initialize() can reference them)
+let landscapeData = null;
+let chartInstance = null;
+let globalRevealed = false;
+let instructorUnlocked = false;
+
+// ─── BUILD INTERACTION STRUCTURE ─────────────────────────────────
+function buildInteractions(n, k, str, rngFn) {
+  const matrix = [];
+  for (let i = 0; i < n; i++) {
+    let neighbors = [];
+    if (k === 0) {
+      // no interactions
+    } else if (str === 'random') {
+      // random k neighbors from other elements
+      const others = Array.from({length: n}, (_, j) => j).filter(j => j !== i);
+      shuffle(others, rngFn);
+      neighbors = others.slice(0, k);
+    } else if (str === 'modular') {
+      // divide N into blocks of size ceil(N / numBlocks)
+      const blockSize = Math.max(k + 1, Math.ceil(n / Math.max(1, Math.floor(n / (k + 1)))));
+      const blockStart = Math.floor(i / blockSize) * blockSize;
+      const blockEnd = Math.min(blockStart + blockSize, n);
+      const blockMembers = [];
+      for (let j = blockStart; j < blockEnd; j++) { if (j !== i) blockMembers.push(j); }
+      // take k from same block; if block too small, wrap within block
+      const needed = k;
+      const pool = [...blockMembers];
+      while (pool.length < needed) pool.push(...blockMembers); // repeat if tiny block
+      neighbors = pool.slice(0, needed);
+    } else if (str === 'nd') {
+      // nearly decomposable: most interactions within block, one weak cross-block
+      const blockSize = Math.max(k + 1, Math.ceil(n / Math.max(1, Math.floor(n / (k + 1)))));
+      const blockStart = Math.floor(i / blockSize) * blockSize;
+      const blockEnd = Math.min(blockStart + blockSize, n);
+      const blockMembers = [];
+      for (let j = blockStart; j < blockEnd; j++) { if (j !== i) blockMembers.push(j); }
+      const inBlock = Math.max(0, k - 1);
+      const pool = [...blockMembers];
+      while (pool.length < inBlock) pool.push(...blockMembers);
+      neighbors = pool.slice(0, inBlock);
+      if (k > 0) {
+        // add one cross-block neighbor
+        const crossPool = Array.from({length: n}, (_, j) => j).filter(j => j < blockStart || j >= blockEnd);
+        if (crossPool.length > 0) {
+          shuffle(crossPool, rngFn);
+          neighbors.push(crossPool[0]);
+        } else {
+          // no cross available, use another in-block
+          neighbors.push(blockMembers[inBlock % blockMembers.length] ?? 0);
+        }
+      }
+    }
+    neighbors.sort((a, b) => a - b);
+    matrix.push([i, ...neighbors].sort((a,b)=>a-b));
+  }
+  return matrix;
+}
+
+function shuffle(arr, rngFn) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rngFn() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// ─── BUILD VALUE TABLES ──────────────────────────────────────────
+function buildValueTables(n, matrix, rngFn) {
+  const tables = [];
+  for (let i = 0; i < n; i++) {
+    const deps = matrix[i]; // includes i itself
+    const numKeys = Math.pow(2, deps.length);
+    const tbl = {};
+    for (let key = 0; key < numKeys; key++) {
+      tbl[key] = rngFn();
+    }
+    tables.push({ deps, tbl });
+  }
+  return tables;
+}
+
+// ─── COMPUTE FITNESS ─────────────────────────────────────────────
+function computeFitness(bits) {
+  let total = 0;
+  for (let i = 0; i < bits.length; i++) {
+    const { deps, tbl } = valueTables[i];
+    let key = 0;
+    for (let d = 0; d < deps.length; d++) {
+      key = (key << 1) | bits[deps[d]];
+    }
+    total += tbl[key];
+  }
+  return total / bits.length;
+}
+
+// ─── CHECK LOCAL OPTIMUM ─────────────────────────────────────────
+function isLocalOptimum(bits, fitness) {
+  for (let i = 0; i < bits.length; i++) {
+    const neighbor = [...bits];
+    neighbor[i] ^= 1;
+    if (computeFitness(neighbor) > fitness) return false;
+  }
+  return true;
+}
+
+// ─── INITIALIZE ──────────────────────────────────────────────────
+function initialize() {
+  N = Math.min(16, Math.max(2, parseInt(document.getElementById('inp-n').value) || 8));
+  K = Math.min(N - 1, Math.max(0, parseInt(document.getElementById('inp-k').value) || 2));
+  structure = document.getElementById('inp-structure').value;
+  seed = parseInt(document.getElementById('inp-seed').value) || 42;
+
+  document.getElementById('inp-n').value = N;
+  document.getElementById('inp-k').value = K;
+
+  rng = mulberry32(seed);
+  interactionMatrix = buildInteractions(N, K, structure, rng);
+  valueTables = buildValueTables(N, interactionMatrix, rng);
+
+  currentBits = Array(N).fill(0);
+  currentFitness = null;
+  bestFitness = -Infinity;
+  bestBits = [];
+  history = [];
+  stepCount = 0;
+  totalExplored = 0;
+
+  renderBitsRow();
+  renderFitness(null, null);
+  renderBest();
+  renderHistory();
+  renderMatrix();
+  document.getElementById('step-counter').textContent = 'Step 0';
+  document.getElementById('history-count').textContent = '0 explored';
+  document.getElementById('local-opt-badge').classList.remove('visible');
+
+  // Clear instructor cache on new landscape
+  landscapeData = null;
+  globalRevealed = false;
+}
+
+// ─── RENDER BITS ROW ─────────────────────────────────────────────
+function renderBitsRow() {
+  const container = document.getElementById('bits-row');
+  container.innerHTML = '';
+  for (let i = 0; i < N; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'bit-cell';
+    const idx = document.createElement('div');
+    idx.className = 'bit-index';
+    idx.textContent = `x${i+1}`;
+    const btn = document.createElement('button');
+    btn.className = `bit-btn ${currentBits[i] ? 'on' : 'off'}`;
+    btn.textContent = currentBits[i];
+    btn.dataset.i = i;
+    btn.addEventListener('click', () => flipBit(i));
+
+    // show neighbor count below
+    const nbr = document.createElement('div');
+    nbr.className = 'bit-neighbors';
+    const deps = interactionMatrix[i].filter(j => j !== i);
+    nbr.textContent = deps.length > 0 ? deps.map(j=>`x${j+1}`).join(',') : '—';
+    nbr.title = deps.length > 0 ? `Interacts with: ${deps.map(j=>`x${j+1}`).join(', ')}` : 'No interactions';
+
+    cell.appendChild(idx);
+    cell.appendChild(btn);
+    cell.appendChild(nbr);
+    container.appendChild(cell);
+  }
+}
+
+function updateBitsDisplay() {
+  const btns = document.querySelectorAll('.bit-btn');
+  btns.forEach(btn => {
+    const i = parseInt(btn.dataset.i);
+    btn.className = `bit-btn ${currentBits[i] ? 'on' : 'off'}`;
+    btn.textContent = currentBits[i];
+  });
+}
+
+// ─── FLIP BIT ────────────────────────────────────────────────────
+function flipBit(i) {
+  const prevFitness = currentFitness;
+  currentBits[i] ^= 1;
+  currentFitness = computeFitness(currentBits);
+  stepCount++;
+  totalExplored++;
+
+  updateBitsDisplay();
+
+  // delta
+  let delta = null;
+  if (prevFitness !== null) delta = currentFitness - prevFitness;
+
+  // fitness display
+  renderFitness(currentFitness, delta);
+
+  // update best
+  if (currentFitness > bestFitness) {
+    bestFitness = currentFitness;
+    bestBits = [...currentBits];
+    renderBest();
+  }
+
+  // history
+  history.unshift({ bits: [...currentBits], fitness: currentFitness, delta, step: stepCount });
+  if (history.length > 10) history.pop();
+  renderHistory();
+
+  // local optimum check
+  const localOpt = isLocalOptimum(currentBits, currentFitness);
+  document.getElementById('local-opt-badge').classList.toggle('visible', localOpt);
+  document.getElementById('step-counter').textContent = `Step ${stepCount}`;
+  document.getElementById('history-count').textContent = `${totalExplored} explored`;
+}
+
+// ─── RENDER FITNESS ──────────────────────────────────────────────
+function renderFitness(val, delta) {
+  const el = document.getElementById('fitness-value');
+  const de = document.getElementById('fitness-delta');
+  if (val === null) { el.textContent = '—'; el.className = 'fitness-value'; de.textContent = ''; return; }
+  el.textContent = val.toFixed(4);
+  el.className = 'fitness-value flash';
+  setTimeout(() => el.className = 'fitness-value', 350);
+
+  if (delta === null) {
+    de.textContent = '';
+    de.style.color = '';
+  } else if (delta > 0.00001) {
+    de.textContent = `▲ +${delta.toFixed(4)}`;
+    de.style.color = 'var(--accent3)';
+  } else if (delta < -0.00001) {
+    de.textContent = `▼ ${delta.toFixed(4)}`;
+    de.style.color = 'var(--accent2)';
+  } else {
+    de.textContent = `± 0.0000`;
+    de.style.color = 'var(--text-muted)';
+  }
+}
+
+// ─── RENDER BEST ─────────────────────────────────────────────────
+function renderBest() {
+  const body = document.getElementById('best-body');
+  if (bestFitness === -Infinity) {
+    body.innerHTML = '<div class="empty-state">No configurations explored yet.</div>';
+    return;
+  }
+  const bitsHtml = bestBits.map((b, i) =>
+    `<div class="best-bit ${b ? 'on' : 'off'}" title="x${i+1}">${b}</div>`
+  ).join('');
+  body.innerHTML = `
+    <div class="best-config">${bitsHtml}</div>
+    <div class="best-fitness">${bestFitness.toFixed(4)}</div>
+    <div class="best-meta">found at step ${history.find(h => h.fitness === bestFitness)?.step ?? '—'}</div>
+  `;
+}
+
+// ─── RENDER HISTORY ──────────────────────────────────────────────
+function renderHistory() {
+  const tbody = document.getElementById('history-tbody');
+  if (history.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Flip a bit to begin.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = history.map((h, idx) => {
+    const isBest = Math.abs(h.fitness - bestFitness) < 0.000001;
+    const isImprove = h.delta !== null && h.delta > 0.00001;
+    const rowClass = isBest ? 'best-row' : (isImprove ? 'improve-row' : '');
+    const bitsHtml = h.bits.map(b => `<div class="h-bit ${b?'on':'off'}">${b}</div>`).join('');
+    let deltaHtml = '';
+    if (h.delta === null) deltaHtml = '<span class="delta-same">—</span>';
+    else if (h.delta > 0.00001) deltaHtml = `<span class="delta-up">▲${h.delta.toFixed(3)}</span>`;
+    else if (h.delta < -0.00001) deltaHtml = `<span class="delta-down">▼${h.delta.toFixed(3)}</span>`;
+    else deltaHtml = '<span class="delta-same">±0</span>';
+    const marker = isBest ? '★ ' : '';
+    return `<tr class="${rowClass} slide-in">
+      <td>${marker}${h.step}</td>
+      <td><div class="history-bits">${bitsHtml}</div></td>
+      <td>${h.fitness.toFixed(4)}</td>
+      <td class="delta-cell">${deltaHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── RENDER MATRIX ───────────────────────────────────────────────
+function renderMatrix() {
+  const body = document.getElementById('matrix-body');
+  body.className = `matrix-body ${matrixOpen ? 'open' : ''}`;
+  if (!matrixOpen) return;
+
+  // Build adjacency: matrix[i] contains all elements that i depends on
+  // Show as NxN grid: row i, col j — shaded if j influences i
+  let html = `<div class="matrix-grid" style="grid-template-columns:repeat(${N+1}, 26px); grid-template-rows:repeat(${N+1}, 26px);">`;
+  // header row
+  html += `<div class="matrix-cell" style="background:none;border:none;"></div>`;
+  for (let j = 0; j < N; j++) html += `<div class="matrix-cell diag" title="x${j+1}" style="font-size:8px;">x${j+1}</div>`;
+  // data rows
+  for (let i = 0; i < N; i++) {
+    html += `<div class="matrix-cell diag" style="font-size:8px;">x${i+1}</div>`;
+    for (let j = 0; j < N; j++) {
+      const active = interactionMatrix[i].includes(j);
+      const isDiag = i === j;
+      if (isDiag) {
+        html += `<div class="matrix-cell diag" title="x${i+1} (self)">■</div>`;
+      } else if (active) {
+        html += `<div class="matrix-cell active" title="x${j+1} affects x${i+1}">●</div>`;
+      } else {
+        html += `<div class="matrix-cell inactive" title="">·</div>`;
+      }
+    }
+  }
+  html += `</div>`;
+
+  // Structure description
+  const descriptions = {
+    random: `<b>Random</b> — each element's K interactors are chosen uniformly at random from the other N−1 elements.`,
+    modular: `<b>Modular</b> — elements are partitioned into blocks. All K interactions stay within the same block. No cross-block dependencies.`,
+    nd: `<b>Nearly Decomposable</b> — most interactions are within blocks (K−1 within-block), with one weak cross-block interaction per element.`
+  };
+
+  html += `<div class="matrix-legend" style="margin-top:12px;">
+    Row i, column j: ● means x<sub>${'j+1'}</sub> contributes to the fitness of x<sub>${'i+1'}</sub>.<br><br>
+    ${descriptions[structure]}
+  </div>`;
+
+  body.innerHTML = html;
+}
+
+// ─── EVENTS ──────────────────────────────────────────────────────
+document.getElementById('btn-regen').addEventListener('click', initialize);
+document.getElementById('btn-reset').addEventListener('click', () => {
+  currentBits = Array(N).fill(0);
+  currentFitness = null;
+  bestFitness = -Infinity;
+  bestBits = [];
+  history = [];
+  stepCount = 0;
+  totalExplored = 0;
+  updateBitsDisplay();
+  renderFitness(null, null);
+  renderBest();
+  renderHistory();
+  document.getElementById('step-counter').textContent = 'Step 0';
+  document.getElementById('history-count').textContent = '0 explored';
+  document.getElementById('local-opt-badge').classList.remove('visible');
+});
+
+document.getElementById('matrix-toggle').addEventListener('click', () => {
+  matrixOpen = !matrixOpen;
+  document.getElementById('matrix-toggle').textContent = matrixOpen ? '▼ Hide Matrix' : '▶ Show Matrix';
+  renderMatrix();
+});
+
+// ─── INSTRUCTOR MODE ─────────────────────────────────────────────
+const INSTRUCTOR_PASSWORD = 'complexity';
+// (state vars hoisted above)
+
+document.getElementById('btn-instructor').addEventListener('click', () => {
+  if (instructorUnlocked) {
+    toggleInstructorPanel();
+  } else {
+    openModal();
+  }
+});
+
+document.getElementById('modal-cancel').addEventListener('click', closeModal);
+document.getElementById('modal-backdrop').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modal-backdrop')) closeModal();
+});
+
+document.getElementById('modal-submit').addEventListener('click', submitPassword);
+document.getElementById('modal-pw').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') submitPassword();
+  if (e.key === 'Escape') closeModal();
+});
+
+function openModal() {
+  document.getElementById('modal-pw').value = '';
+  document.getElementById('modal-error').textContent = '';
+  document.getElementById('modal-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('modal-pw').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+}
+
+function submitPassword() {
+  const pw = document.getElementById('modal-pw').value;
+  if (pw === INSTRUCTOR_PASSWORD) {
+    instructorUnlocked = true;
+    closeModal();
+    document.getElementById('btn-instructor').classList.add('active');
+    document.getElementById('btn-instructor').textContent = '⚷ Instructor ✓';
+    openInstructorPanel();
+  } else {
+    document.getElementById('modal-error').textContent = 'Incorrect password.';
+    document.getElementById('modal-pw').value = '';
+    document.getElementById('modal-pw').focus();
+  }
+}
+
+function toggleInstructorPanel() {
+  const panel = document.getElementById('instructor-panel');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) {
+    panel.classList.remove('open');
+  } else {
+    openInstructorPanel();
+  }
+}
+
+document.getElementById('btn-exit-instructor').addEventListener('click', () => {
+  document.getElementById('instructor-panel').classList.remove('open');
+});
+
+function openInstructorPanel() {
+  document.getElementById('instructor-panel').classList.add('open');
+  if (!landscapeData || landscapeData.N !== N || landscapeData.seed !== seed || landscapeData.structure !== structure || landscapeData.K !== K) {
+    computeLandscape();
+  }
+}
+
+function computeLandscape() {
+  // For N <= 16, enumerate all 2^N configs
+  const total = Math.pow(2, N);
+  const allFitness = new Float64Array(total);
+  const localOptima = [];
+  let globalMax = -Infinity;
+  let globalConfig = null;
+
+  for (let cfg = 0; cfg < total; cfg++) {
+    const bits = Array.from({length: N}, (_, i) => (cfg >> (N - 1 - i)) & 1);
+    const f = computeFitness(bits);
+    allFitness[cfg] = f;
+    if (f > globalMax) { globalMax = f; globalConfig = bits; }
+  }
+
+  // Find local optima
+  for (let cfg = 0; cfg < total; cfg++) {
+    const bits = Array.from({length: N}, (_, i) => (cfg >> (N - 1 - i)) & 1);
+    const f = allFitness[cfg];
+    let isLocal = true;
+    for (let i = 0; i < N; i++) {
+      const nCfg = cfg ^ (1 << (N - 1 - i));
+      if (allFitness[nCfg] > f) { isLocal = false; break; }
+    }
+    if (isLocal) localOptima.push({ bits, fitness: f, isGlobal: Math.abs(f - globalMax) < 1e-9 });
+  }
+
+  localOptima.sort((a, b) => b.fitness - a.fitness);
+
+  landscapeData = { N, K, structure, seed, total, allFitness, localOptima, globalMax, globalConfig };
+  globalRevealed = false;
+
+  renderInstructorStats();
+  renderBarChart();
+  renderLocalOptimaList();
+
+  // reset global reveal UI
+  document.getElementById('global-bits').innerHTML = '';
+  document.getElementById('global-fitness-label').textContent = '';
+  document.getElementById('btn-reveal-global').style.display = '';
+}
+
+function renderInstructorStats() {
+  const { total, localOptima, globalMax } = landscapeData;
+  document.getElementById('stat-total').textContent = total.toLocaleString();
+  document.getElementById('stat-local').textContent = localOptima.length;
+  document.getElementById('stat-local-pct').textContent = `${((localOptima.length / total) * 100).toFixed(1)}% of configs`;
+  document.getElementById('stat-global').textContent = globalMax.toFixed(4);
+}
+
+function renderBarChart() {
+  const { allFitness, localOptima, total } = landscapeData;
+
+  // Sort all fitness values
+  const sorted = Array.from(allFitness).map((f, i) => ({ f, i })).sort((a, b) => a.f - b.f);
+  const localSet = new Set(localOptima.map(lo => {
+    // find config index for this local opt
+    const bits = lo.bits;
+    let cfg = 0;
+    for (let i = 0; i < N; i++) cfg = (cfg << 1) | bits[i];
+    return cfg;
+  }));
+
+  const colors = sorted.map(({ i }) => localSet.has(i) ? 'rgba(255,213,79,0.85)' : 'rgba(79,195,247,0.4)');
+  const values = sorted.map(({ f }) => f);
+
+  // Destroy old chart
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  const ctx = document.getElementById('landscape-chart').getContext('2d');
+
+  // Use Chart.js from CDN
+  if (typeof Chart === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+    script.onload = () => drawChart(ctx, values, colors, total);
+    document.head.appendChild(script);
+  } else {
+    drawChart(ctx, values, colors, total);
+  }
+}
+
+function drawChart(ctx, values, colors, total) {
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: values.map((_, i) => i),
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderWidth: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: () => '',
+            label: (ctx) => `Fitness: ${ctx.raw.toFixed(4)}${colors[ctx.dataIndex] === 'rgba(255,213,79,0.85)' ? ' ★ local optimum' : ''}`
+          }
+        }
+      },
+      scales: {
+        x: { display: false },
+        y: {
+          min: 0, max: 1,
+          ticks: { color: '#7986a8', font: { family: "'IBM Plex Mono'", size: 10 }, maxTicksLimit: 5 },
+          grid: { color: 'rgba(42,48,80,0.5)' },
+          border: { color: 'transparent' }
+        }
+      }
+    }
+  });
+}
+
+function renderLocalOptimaList() {
+  const { localOptima } = landscapeData;
+  const list = document.getElementById('local-opt-list');
+  list.innerHTML = localOptima.map((lo, idx) => {
+    const bitsHtml = lo.bits.map(b => `<div class="lo-bit ${b?'on':'off'} ${lo.isGlobal?'lo-global':''}">${b}</div>`).join('');
+    const globalMark = lo.isGlobal ? ' <span style="color:var(--gold);font-size:10px;">★ global</span>' : '';
+    return `<div class="local-opt-row">
+      <span class="local-opt-rank">${idx+1}.</span>
+      <span class="local-opt-fitness">${lo.fitness.toFixed(4)}</span>
+      <div class="local-opt-bits">${bitsHtml}</div>
+      ${globalMark}
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btn-reveal-global').addEventListener('click', () => {
+  if (!landscapeData) return;
+  const { globalConfig, globalMax } = landscapeData;
+  const bitsHtml = globalConfig.map((b, i) =>
+    `<div class="global-bit ${b?'on':'off'}" title="x${i+1}">${b}</div>`
+  ).join('');
+  document.getElementById('global-bits').innerHTML = bitsHtml;
+  document.getElementById('global-fitness-label').textContent = `= ${globalMax.toFixed(4)}`;
+  document.getElementById('btn-reveal-global').style.display = 'none';
+  globalRevealed = true;
+});
+
+// ─── BOOT ────────────────────────────────────────────────────────
+initialize();
+</script>
+</body>
+</html>
